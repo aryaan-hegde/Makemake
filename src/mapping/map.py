@@ -43,21 +43,6 @@ class Mapper:
             return [node.operand]
         return []
 
-    # def compute_pack_truth_table(self, node, inputs):
-    #     tt = []
-    #     for i in range(2 ** len(inputs)):
-    #         inputs_case = []
-    #         for j in range(len(inputs)):
-    #             inputs_case.append((i >> (len(inputs) - 1 - j)) & 1)
-    #         if isinstance(node, BinaryOp):
-    #             tt.append(self.eval_bin_case(inputs_case, node.op.value))
-    #         elif isinstance(node, UnaryOp):
-    #             if node.op.value == '~':
-    #                 tt.append(1 - inputs_case[0])
-    #             else:
-    #                 raise ValueError(f"Unsupported operation: {node.op.value}")
-    #     return tt
-
     def eval_node(self, node, vals):
         if isinstance(node, BinaryOp):
             left  = self.eval_node(node.left, vals)
@@ -71,39 +56,23 @@ class Mapper:
         else:
             return vals.get(node.value, 0)
 
-    # def compute_pack_truth_table(self, node, inputs):
-    #     print("Entered packing")
-    #     print(inputs)
-    #     tt = []
-    #     for i in range(2 ** len(inputs)):
-    #         vals = {
-    #             inputs[j].value: (i >> (len(inputs) - 1 - j)) & 1
-    #             for j in range(len(inputs))
-    #         }
-    #         tt.append(self.eval_node(node, vals))
-    #     return tt
-
     def compute_pack_truth_table(self, node, inputs, packed_luts):
         n = len(inputs)
         tt = []
         
         for i in range(2 ** n):
-            # assign bits to each primary input
             primary_vals = {
                 inputs[j].value: (i >> (n - 1 - j)) & 1
                 for j in range(n)
             }
             
-            # evaluate each packed LUT by indexing into its truth table
             lut_outputs = []
             for lut in packed_luts:
-                # build the index into this lut's truth table
                 idx = 0
                 for inp in lut.inputs:
                     idx = (idx << 1) | primary_vals[inp.value]
                 lut_outputs.append(lut.truth_table[idx])
             
-            # apply node's operation across all lut outputs
             tt.append(self.eval_bin_case(lut_outputs, node.op.value))
         
         return tt
@@ -139,25 +108,10 @@ class Mapper:
             
             return tt
 
-        # extended_tt = prev_tt * 2
-        # zeroes = [0] * len(prev_tt)
-        # ones = [1] * len(prev_tt)
-        # new_col = []
-        # new_col += zeroes + ones
-        # new_tt = []
-        # for entry_idx in range(len(new_col)):
-        #     input_case = []
-        #     input_case.append(new_col[entry_idx])
-        #     input_case.append(extended_tt[entry_idx])
-        
-        #     new_tt.append(self.eval_bin_case(input_case, op))
-        
-        # return new_tt
-
-        extended_tt = prev_tt * 2    # new input=0: first half, new input=1: second half
+        extended_tt = prev_tt * 2
         new_tt = []
         for entry_idx in range(len(extended_tt)):
-            new_input = entry_idx // len(prev_tt)  # 0 for first half, 1 for second
+            new_input = entry_idx // len(prev_tt)
             prev_output = extended_tt[entry_idx]
             new_tt.append(self.eval_bin_case([prev_output, new_input], op))
         return new_tt

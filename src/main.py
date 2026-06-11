@@ -11,7 +11,6 @@ print(tokens)
 parser = Parser(tokens)
 
 ast = parser.parse()
-# print(ast)
 expander = Expand(ast, parser.inputs, parser.outputs)
 trees = expander.expand()
 tree = trees[0]
